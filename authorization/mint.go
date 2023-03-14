@@ -1,8 +1,6 @@
 package authorization
 
 import (
-	"log"
-
 	jwt "github.com/golang-jwt/jwt/v5"
 )
 
@@ -15,7 +13,6 @@ func NewMinter(key interface{}) *JWT {
 }
 
 func (m JWT) Mint(claims Claims) (string, error) {
-	log.Printf("claims: %s", claims)
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	signed, err := token.SignedString(m.key)
 

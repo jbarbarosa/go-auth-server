@@ -28,13 +28,11 @@ func TestCanMintJWTFromCredentials(t *testing.T) {
 				t.Fatalf("test %s: could not generate key pairs, error: %s", v.name, err)
 			}
 
-			jwt, err := NewMinter(privkey).Mint(v.claims)
+			_, err = NewMinter(privkey).Mint(v.claims)
 
 			if err != nil {
 				t.Fatalf("test %s: expected no errors, got %s", v.name, err)
 			}
-
-			t.Fatalf("test %s: output: %s", v.name, jwt)
 		})
 	}
 }
