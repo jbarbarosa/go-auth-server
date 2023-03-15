@@ -21,14 +21,16 @@ func (v JWTValidator) Validate(token string) (*jwt.Token, error) {
 		return v.pubkey, nil
 	})
 
-	if t.Valid {
-		return t, nil
-	} else if errors.Is(err, jwt.ErrTokenMalformed) {
-		return nil, fmt.Errorf("Malformed Token")
-	} else if errors.Is(err, jwt.ErrTokenExpired) {
-		return nil, fmt.Errorf("Token expired")
-	} else if errors.Is(err, jwt.ErrTokenNotValidYet) {
-		return nil, fmt.Errorf("Token is not yet valid")
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenMalformed) {
+			return nil, jwt.ErrTokenMalformed
+		} else if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, jwt.ErrTokenExpired
+		} else if errors.Is(err, jwt.ErrTokenNotValidYet) {
+			return nil, jwt.ErrTokenNotValidYet
+		}
+		return nil, fmt.Errorf("Unknown error: %s", err)
 	}
-	return nil, fmt.Errorf("Unknown error: %s", err)
+
+	return t, nil
 }

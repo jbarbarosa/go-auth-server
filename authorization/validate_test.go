@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log"
 	"testing"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func testMintFactory() (*JWTMinter, ed25519.PublicKey) {
@@ -24,9 +26,9 @@ func TestValidateJWTString(t *testing.T) {
 		err    error
 	}
 
-	jwt, pubkey := testMintFactory()
+	minter, pubkey := testMintFactory()
 
-	token, err := jwt.Mint(*NewClaims("test@test.com"))
+	token, err := minter.Mint(*NewClaims("test@test.com"))
 
 	if err != nil {
 		log.Fatalf("Unable to generate test tokens, error: %s", err)
@@ -34,9 +36,15 @@ func TestValidateJWTString(t *testing.T) {
 
 	cases := []testcase{
 		{
-			name:   "Simple payload",
+			name:   "Simple token",
 			token:  token,
 			pubkey: pubkey,
+		},
+		{
+			name:   "Broken token",
+			token:  "I'm Borked",
+			pubkey: pubkey,
+			err:    jwt.ErrTokenMalformed,
 		},
 	}
 
@@ -45,16 +53,20 @@ func TestValidateJWTString(t *testing.T) {
 			token, err := NewValidator(kase.pubkey).Validate(kase.token)
 
 			if err != nil {
-				if kase.err != nil {
-					t.Fatalf("test %s: expected the following error: %s, got no error", kase.name, kase.err)
-				} else {
-					if !errors.Is(kase.err, err) {
-						t.Fatalf("test %s: expected the following error: %s, got error: %s", kase.name, kase.err, err)
-					}
+				if kase.err == nil {
+					t.Fatalf("test %s: expected no error, got the following error: %s", kase.name, err)
+				} else if !errors.Is(err, kase.err) {
+					t.Fatalf("test %s: expected the following error: %s, got %s", kase.name, kase.err, err)
 				}
+				return
 			}
 
-			j, _ := json.Marshal(token.Claims)
+			j, err := json.Marshal(token.Claims)
+
+			if err != nil {
+				t.Fatalf("test %s: unable to marshal token, err: %s", kase.name, err)
+			}
+
 			var claims Claims
 			err = json.Unmarshal(j, &claims)
 
