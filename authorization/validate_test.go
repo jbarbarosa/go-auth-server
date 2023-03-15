@@ -27,7 +27,7 @@ func TestValidateJWTString(t *testing.T) {
 	}
 
 	minter, pubkey := testMintFactory()
-
+	_, wrongpubkey := testMintFactory()
 	token, err := minter.Mint(*NewClaims("test@test.com"))
 
 	if err != nil {
@@ -45,6 +45,12 @@ func TestValidateJWTString(t *testing.T) {
 			token:  "I'm Borked",
 			pubkey: pubkey,
 			err:    jwt.ErrTokenMalformed,
+		},
+		{
+			name:   "Pubkey mismatch",
+			token:  token,
+			pubkey: wrongpubkey,
+			err:    jwt.ErrEd25519Verification,
 		},
 	}
 
