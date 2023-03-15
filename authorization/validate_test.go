@@ -4,17 +4,24 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
+func fatal(err error) {
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+}
+
 func testMintFactory() (*JWTMinter, ed25519.PublicKey) {
 	pubkey, privkey, err := ed25519.GenerateKey(nil)
-	if err != nil {
-		log.Fatalf("Unable to generate keys, error: %s", err)
-	}
+
+	fatal(fmt.Errorf("Unable to generate keys, error: %s", err))
+
 	return &JWTMinter{privkey: privkey}, pubkey
 }
 
@@ -30,9 +37,7 @@ func TestValidateJWTString(t *testing.T) {
 	_, wrongpubkey := testMintFactory()
 	token, err := minter.Mint(*NewClaims("test@test.com"))
 
-	if err != nil {
-		log.Fatalf("Unable to generate test tokens, error: %s", err)
-	}
+	fatal(fmt.Errorf("Unable to generate test tokens, error: %s", err))
 
 	cases := []testcase{
 		{
@@ -69,16 +74,12 @@ func TestValidateJWTString(t *testing.T) {
 
 			j, err := json.Marshal(token.Claims)
 
-			if err != nil {
-				t.Fatalf("test %s: unable to marshal token, err: %s", kase.name, err)
-			}
+			fatal(fmt.Errorf("test %s: unable to marshal token, err: %s", kase.name, err))
 
 			var claims Claims
 			err = json.Unmarshal(j, &claims)
 
-			if err != nil {
-				t.Fatalf("test %s: unable to convert token claims into struct, err: %s", kase.name, err)
-			}
+			fatal(fmt.Errorf("test %s: unable to convert token claims into struct, err: %s", kase.name, err))
 		})
 	}
 }
