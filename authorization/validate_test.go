@@ -33,7 +33,7 @@ func TestValidateJWTString(t *testing.T) {
 
 	minter, pubkey := mintFactory(t)
 	_, wrongpubkey := mintFactory(t)
-	token, err := minter.Mint(*authorization.NewClaims("test@test.com"))
+	token, err := minter.Mint(*authorization.ClaimsForUser(authorization.User{"test@test.com", make([]string, 0)}))
 
 	fatal(t, err)
 	

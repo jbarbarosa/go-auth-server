@@ -10,10 +10,11 @@ import (
 
 type Claims struct {
 	Email string `json:"email"`
+  Permissions []string `json:"permissions"`
 	jwt.RegisteredClaims
 }
 
-func NewClaims(email string) *Claims {
+func ClaimsForUser(user User) *Claims {
 	newuuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -21,7 +22,8 @@ func NewClaims(email string) *Claims {
 	}
 
 	return &Claims{
-		email,
+		user.Email,
+    user.Permissions,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
 			Issuer:    "GoAuthServer",

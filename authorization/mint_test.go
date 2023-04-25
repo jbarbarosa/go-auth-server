@@ -5,16 +5,16 @@ import (
 	"testing"
 )
 
-func TestCanMintJWTFromCredentials(t *testing.T) {
+func TestCanMintJWTFromUser(t *testing.T) {
 	type scenario struct {
 		name   string
-		claims Claims
+    user User
 	}
 
 	for _, scenario := range []scenario{
 		{
 			name: "simple credentials",
-			claims: Claims{
+			user: User{
 				Email: "foo",
 			},
 		},
@@ -26,7 +26,8 @@ func TestCanMintJWTFromCredentials(t *testing.T) {
 				t.Fatalf("test %s: could not generate key pairs, error: %s", scenario.name, err)
 			}
 
-			_, err = NewMinter(privkey).Mint(scenario.claims)
+      claims := ClaimsForUser(scenario.user)
+			_, err = NewMinter(privkey).Mint(*claims)
 
 			if err != nil {
 				t.Fatalf("test %s: expected no errors, got %s", scenario.name, err)
