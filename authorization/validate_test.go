@@ -1,28 +1,26 @@
-package authorization
+package authorization_test
 
 import (
 	"crypto/ed25519"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
 	"testing"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jbarbarosa/go-auth-server/authorization"
 )
 
-func fatal(err error) {
+func fatal(t *testing.T, err error) {
 	if err != nil {
-		log.Fatalf(err.Error())
+		t.Fatalf(err.Error())
 	}
 }
 
-func testMintFactory() (*JWTMinter, ed25519.PublicKey) {
+func mintFactory(t *testing.T) (*authorization.JWTMinter, ed25519.PublicKey) {
 	pubkey, privkey, err := ed25519.GenerateKey(nil)
+	fatal(t, err)
 
-	fatal(fmt.Errorf("Unable to generate keys, error: %s", err))
-
-	return &JWTMinter{privkey: privkey}, pubkey
+	return &authorization.JWTMinter{Privkey: privkey}, pubkey
 }
 
 func TestValidateJWTString(t *testing.T) {
@@ -33,13 +31,13 @@ func TestValidateJWTString(t *testing.T) {
 		err    error
 	}
 
-	minter, pubkey := testMintFactory()
-	_, wrongpubkey := testMintFactory()
-	token, err := minter.Mint(*NewClaims("test@test.com"))
+	minter, pubkey := mintFactory(t)
+	_, wrongpubkey := mintFactory(t)
+	token, err := minter.Mint(*authorization.NewClaims("test@test.com"))
 
-	fatal(fmt.Errorf("Unable to generate test tokens, error: %s", err))
+	fatal(t, err)
 
-	cases := []testcase{
+	scenarios := []testcase{
 		{
 			name:   "Simple token",
 			token:  token,
@@ -59,27 +57,27 @@ func TestValidateJWTString(t *testing.T) {
 		},
 	}
 
-	for _, kase := range cases {
-		t.Run(kase.name, func(t *testing.T) {
-			token, err := NewValidator(kase.pubkey).Validate(kase.token)
+	for _, scenario := range scenarios {
+		t.Run(scenario.name, func(t *testing.T) {
+			token, err := authorization.NewValidator(scenario.pubkey).Validate(scenario.token)
 
 			if err != nil {
-				if kase.err == nil {
-					t.Fatalf("test %s: expected no error, got the following error: %s", kase.name, err)
-				} else if !errors.Is(err, kase.err) {
-					t.Fatalf("test %s: expected the following error: %s, got %s", kase.name, kase.err, err)
+				if scenario.err == nil {
+					t.Fatalf("test %s: expected no error, got the following error: %s", scenario.name, err)
+				} else if !errors.Is(err, scenario.err) {
+					t.Fatalf("test %s: expected the following error: %s, got %s", scenario.name, scenario.err, err)
 				}
 				return
 			}
 
 			j, err := json.Marshal(token.Claims)
 
-			fatal(fmt.Errorf("test %s: unable to marshal token, err: %s", kase.name, err))
+			fatal(t, err) 
 
-			var claims Claims
+			var claims authorization.Claims
 			err = json.Unmarshal(j, &claims)
 
-			fatal(fmt.Errorf("test %s: unable to convert token claims into struct, err: %s", kase.name, err))
+			fatal(t, err)
 		})
 	}
 }

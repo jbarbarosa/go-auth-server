@@ -5,7 +5,7 @@ import (
 )
 
 type JWTMinter struct {
-	privkey interface{}
+	Privkey interface{}
 }
 
 func NewMinter(key interface{}) *JWTMinter {
@@ -14,7 +14,7 @@ func NewMinter(key interface{}) *JWTMinter {
 
 func (m JWTMinter) Mint(claims Claims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
-	signed, err := token.SignedString(m.privkey)
+	signed, err := token.SignedString(m.Privkey)
 
 	if err != nil {
 		return "", err
