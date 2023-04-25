@@ -24,7 +24,7 @@ func mintFactory(t *testing.T) (*authorization.JWTMinter, ed25519.PublicKey) {
 }
 
 func TestValidateJWTString(t *testing.T) {
-	type testcase struct {
+	type scenario struct {
 		name   string
 		token  string
 		pubkey ed25519.PublicKey
@@ -36,8 +36,8 @@ func TestValidateJWTString(t *testing.T) {
 	token, err := minter.Mint(*authorization.NewClaims("test@test.com"))
 
 	fatal(t, err)
-
-	scenarios := []testcase{
+	
+  for _, scenario := range []scenario{
 		{
 			name:   "Simple token",
 			token:  token,
@@ -55,9 +55,7 @@ func TestValidateJWTString(t *testing.T) {
 			pubkey: wrongpubkey,
 			err:    jwt.ErrEd25519Verification,
 		},
-	}
-
-	for _, scenario := range scenarios {
+	} {
 		t.Run(scenario.name, func(t *testing.T) {
 			token, err := authorization.NewValidator(scenario.pubkey).Validate(scenario.token)
 
