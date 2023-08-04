@@ -23,7 +23,7 @@ func mintFactory(t *testing.T) (*authorization.JWTMinter, ed25519.PublicKey) {
 	return &authorization.JWTMinter{Privkey: privkey}, pubkey
 }
 
-func TestValidateJWTString(t *testing.T) {
+func TestShouldValidateSimpleToken(t *testing.T) {
 	type scenario struct {
 		name   string
 		token  string
@@ -32,17 +32,54 @@ func TestValidateJWTString(t *testing.T) {
 	}
 
 	minter, pubkey := mintFactory(t)
-	_, wrongpubkey := mintFactory(t)
 	token, err := minter.Mint(*authorization.ClaimsForUser(authorization.User{"test@test.com", make([]string, 0)}))
 
 	fatal(t, err)
-	
-  for _, scenario := range []scenario{
+
+	for _, scenario := range []struct {
+		name   string
+		token  string
+		pubkey ed25519.PublicKey
+		err    error
+	}{
 		{
 			name:   "Simple token",
 			token:  token,
 			pubkey: pubkey,
 		},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			token, err := authorization.NewValidator(scenario.pubkey).Validate(scenario.token)
+
+			if err != nil {
+				t.Fatalf("test %s: expected no error, got the following error: %s", scenario.name, err)
+			}
+
+			j, err := json.Marshal(token.Claims)
+
+			fatal(t, err)
+
+			var claims authorization.Claims
+			err = json.Unmarshal(j, &claims)
+
+			fatal(t, err)
+		})
+	}
+}
+
+func TestShouldReturnJWTStringErrors(t *testing.T) {
+	minter, pubkey := mintFactory(t)
+	_, wrongpubkey := mintFactory(t)
+	token, err := minter.Mint(*authorization.ClaimsForUser(authorization.User{"test@test.com", make([]string, 0)}))
+
+	fatal(t, err)
+
+	for _, scenario := range []struct {
+		name   string
+		token  string
+		pubkey ed25519.PublicKey
+		err    error
+	}{
 		{
 			name:   "Broken token",
 			token:  "I'm Borked",
@@ -57,25 +94,15 @@ func TestValidateJWTString(t *testing.T) {
 		},
 	} {
 		t.Run(scenario.name, func(t *testing.T) {
-			token, err := authorization.NewValidator(scenario.pubkey).Validate(scenario.token)
+			_, err := authorization.NewValidator(scenario.pubkey).Validate(scenario.token)
 
-			if err != nil {
-				if scenario.err == nil {
-					t.Fatalf("test %s: expected no error, got the following error: %s", scenario.name, err)
-				} else if !errors.Is(err, scenario.err) {
-					t.Fatalf("test %s: expected the following error: %s, got %s", scenario.name, scenario.err, err)
-				}
-				return
+			if err == nil {
+				t.Fatalf("scenario expected error, got no errors")
 			}
 
-			j, err := json.Marshal(token.Claims)
-
-			fatal(t, err) 
-
-			var claims authorization.Claims
-			err = json.Unmarshal(j, &claims)
-
-			fatal(t, err)
+			if !errors.Is(err, scenario.err) {
+				t.Fatalf("scenario expected the following error: %s, got %s", scenario.err, err)
+			}
 		})
 	}
 }

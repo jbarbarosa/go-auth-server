@@ -15,13 +15,9 @@ func NewValidator(pubkey ed25519.PublicKey) *JWTValidator {
 }
 
 func (v JWTValidator) Validate(token string) (*jwt.Token, error) {
-	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+	t, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
 		return v.pubkey, nil
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	return t, nil
+	return t, err
 }
